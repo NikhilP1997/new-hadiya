@@ -1,5 +1,5 @@
-# Use Node.js 16 Alpine as base image
-FROM node:16-alpine
+# Stage 1: Build stage
+FROM node:16-alpine AS build
 
 # Set working directory
 WORKDIR /app/products
@@ -15,6 +15,15 @@ RUN npm install
 
 # Copy other application files and directories
 COPY . .
+
+# Stage 2: Runtime stage
+FROM build AS runtime
+
+# Set working directory
+WORKDIR /app/products
+
+# Copy .env.development to .env (for development purposes)
+RUN cp .env.development .env
 
 # Expose port 3000
 EXPOSE 3000
