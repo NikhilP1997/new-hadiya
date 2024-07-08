@@ -1,51 +1,59 @@
 pipeline {
     agent any
+    environment {
+        AWS_ACCOUNT_ID="851725544369"
+        AWS_DEFAULT_REGION="us-east-2"
+        IMAGE_REPO_NAME="backend_app"
+        IMAGE_TAG="hadiya_image_2"
+        REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}"
+    }
 
     stages {
-        stage('Git checkout') {
+        stage('Logging into AWS ECR') {
             steps {
-                git branch: 'main', credentialsId: 'f0a96739-1541-409c-9e2c-d98d6212447b', url: 'https://github.com/roshan-etc/hadiya-backend.git'
-            }
-        }
-
-
-        stage('Docker build') {
-            steps {
-                sh "docker build -t adminapp ."
-                sh "docker images"
-
-            }
-        }
-
-        stage('ECRauthenticate') {
-            steps {
-                sh "aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 654654245097.dkr.ecr.us-east-2.amazonaws.com"
-
-            }
-        }
-
-        stage('ECR TagImage') {
-            steps {
-                sh "docker tag adminapp:latest 654654245097.dkr.ecr.us-east-2.amazonaws.com/adminapp:latest"
-
-            }
-        }
-
-        stage('ECRpushAWSrepository') {
-            steps {
-                sh "docker push 654654245097.dkr.ecr.us-east-2.amazonaws.com/adminapp:latest"
-
-            }
-        }
-
-
-        stage('ECS') {
-            steps {
-                sh 'aws ecs update-service --cluster Devcluster01 --service hadiyaService --force-new-deployment'
+                script {
+                    sh "aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+                }
             }
         }
         
-           
+        stage('Cloning Git') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '', url:'https://github.com/NikhilP1997/new-hadiya.git']]])     
+            }
+        }
 
+        // Building Docker images
+        stage('Building image') {
+            steps {
+                script {
+                    dockerImage = docker.build "${IMAGE_REPO_NAME}:${IMAGE_TAG}"
+                }
+            }
+        }
+   
+        // Uploading Docker images into AWS ECR
+        stage('Pushing to ECR') {
+            steps {  
+                script {
+                    sh "docker tag ${IMAGE_REPO_NAME}:${IMAGE_TAG} ${REPOSITORY_URI}:${IMAGE_TAG}"
+                    sh "docker push ${REPOSITORY_URI}:${IMAGE_TAG}"
+                }
+            }
+        }
+
+        // ECS deployment stage
+        stage('Deploy to ECS') {
+            steps {
+                script {
+                    // Update ECS service with the new image
+                    sh '''
+                    aws ecs update-service --cluster Backend-cluster \
+                        --service Backend_service-3 \
+                        --force-new-deployment
+                    '''
+                }
+            }
+        }
     }
 }
