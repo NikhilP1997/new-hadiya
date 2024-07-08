@@ -9,7 +9,7 @@ COPY package.json ./
 
 COPY . .
 
-RUN rm -f package-lock.json node_modules
+RUN rm -rf package-lock.json node_modules
 
 # Install nodemon globally
 RUN npm install --global nodemon --save-dev
