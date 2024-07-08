@@ -6,8 +6,9 @@ WORKDIR /app/products
 
 # Copy package files
 COPY package.json ./
-RUN cp .env.development .env
+
 COPY . .
+
 RUN rm -f package-lock.json node_modules
 
 # Install nodemon globally
