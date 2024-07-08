@@ -1,0 +1,51 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Git checkout') {
+            steps {
+                git branch: 'main', credentialsId: 'f0a96739-1541-409c-9e2c-d98d6212447b', url: 'https://github.com/roshan-etc/hadiya-backend.git'
+            }
+        }
+
+
+        stage('Docker build') {
+            steps {
+                sh "docker build -t adminapp ."
+                sh "docker images"
+
+            }
+        }
+
+        stage('ECRauthenticate') {
+            steps {
+                sh "aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 654654245097.dkr.ecr.us-east-2.amazonaws.com"
+
+            }
+        }
+
+        stage('ECR TagImage') {
+            steps {
+                sh "docker tag adminapp:latest 654654245097.dkr.ecr.us-east-2.amazonaws.com/adminapp:latest"
+
+            }
+        }
+
+        stage('ECRpushAWSrepository') {
+            steps {
+                sh "docker push 654654245097.dkr.ecr.us-east-2.amazonaws.com/adminapp:latest"
+
+            }
+        }
+
+
+        stage('ECS') {
+            steps {
+                sh 'aws ecs update-service --cluster Devcluster01 --service hadiyaService --force-new-deployment'
+            }
+        }
+        
+           
+
+    }
+}
