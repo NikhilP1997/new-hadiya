@@ -17,6 +17,10 @@ RUN npm install --global nodemon --save-dev
 # Install dependencies
 RUN npm install
 
+RUN npm audit fix --force
+RUN npm run pm2start
+RUN npm run pm2logs
+
 # Expose port 3000
 EXPOSE 3000
 
