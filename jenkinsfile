@@ -49,7 +49,7 @@ pipeline {
                     // Update ECS service with the new image
                     sh '''
                     aws ecs update-service --cluster Backend-cluster \
-                        --service Backend_service-3 \
+                        --service Backend_service-1 \
                         --force-new-deployment
                     '''
                 }
