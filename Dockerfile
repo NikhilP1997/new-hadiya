@@ -1,26 +1,26 @@
-# Use Node.js 18 on Alpine Linux as the base image
-FROM node:18-alpine
+# Use the official Node.js 20 image
+FROM node:18
 
 # Set the working directory inside the container
-WORKDIR /app/products
+WORKDIR /usr/src/app
 
 # Copy package.json and package-lock.json to the working directory
-COPY package.json package-lock.json ./
+COPY package*.json ./
 
-# Install dependencies
-RUN npm install --only=production
+# Install application dependencies
+RUN npm install -g npm@10.2.5
+RUN npm install
+RUN npm install express
 
-# Install nodemon globally (if needed)
-RUN npm install --location=global nodemon --save-dev
 
-# Install dotenv package
-RUN npm install dotenv
+# Install PM2 globally
+#RUN npm install pm2 -g
 
-# Copy all other files and directories to the working directory
+# Copy the rest of the application code to the working directory
 COPY . .
 
-# Expose port 3000 (assuming your application listens on port 3000)
+# Expose the port on which your Node.js application will run
 EXPOSE 3000
 
-# Command to run when the container starts
-CMD ["node", "src/index.js"]
+# Start the application using PM2
+CMD ["node", "src/index.js", "--no-daemon"]
